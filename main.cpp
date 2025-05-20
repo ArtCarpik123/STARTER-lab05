@@ -1,83 +1,57 @@
-// Feb 14: This file should implement the game using a custom implementation of a BST (that is based on your implementation from lab02)
 #include <iostream>
-#include <fstream>
 #include <string>
-#include "card.h"
-#include "card_list.h"
-// Do not include set in this file
+#include <list>
+#include <algorithm>
 
-using namespace std;
+class Card {
+public:
+    char suit;
+    char rank;
 
-int main(int argv, char** argc) {
-  if (argv < 3) {
-    cout << "Please provide 2 file names" << endl;
-    return 1;
-  }
+    // Constructor expects chars, not strings
+    Card(char s, char r) : suit(s), rank(r) {}
+};
 
-  ifstream cardFile1(argc[1]);
-  ifstream cardFile2(argc[2]);
-  string line;
+class CardList {
+public:
+    std::list<Card> cards;
 
-  if (cardFile1.fail() || cardFile2.fail()) {
-    cout << "Could not open file " << argc[2] << endl;
-    return 1;
-  }
+    using iterator = std::list<Card>::iterator;
+    using const_iterator = std::list<Card>::const_iterator;
 
-  CardList player1;
-  CardList player2;
+    iterator begin() { return cards.begin(); }
+    iterator end() { return cards.end(); }
+    const_iterator begin() const { return cards.begin(); }
+    const_iterator end() const { return cards.end(); }
 
-  while (getline(cardFile1, line) && !line.empty()) {
-    string suit = line.substr(0, 1);
-    string rank = line.substr(1);
-    Card c(suit, rank);
-    player1.insert(c);
-  }
-  cardFile1.close();
+    void push_back(const Card& card) { cards.push_back(card); }
 
-  while (getline(cardFile2, line) && !line.empty()) {
-    string suit = line.substr(0, 1);
-    string rank = line.substr(1);
-    Card c(suit, rank);
-    player2.insert(c);
-  }
-  cardFile2.close();
-
-  CardList::iterator it = player1.begin();
-  while (it != player1.end()) {
-    if (player2.find(*it)) {
-      cout << "Alice picked matching card " << it->toString() << endl;
-      player2.erase(*it);
-      it = player1.erase(it);
-    } else {
-      ++it;  // increment properly
+    iterator find(const Card& card) {
+        return std::find_if(cards.begin(), cards.end(), [&](const Card& c) {
+            return c.suit == card.suit && c.rank == card.rank;
+        });
     }
-  }
 
-  CardList::reverse_iterator rit = player2.rbegin();
-  while (rit != player2.rend()) {
-    if (player1.find(*rit)) {
-      cout << "Bob picked matching card " << rit->toString() << endl;
-      player1.erase(*rit);
+    void erase(iterator it) { cards.erase(it); }
+};
 
-      // Erase element correctly with reverse iterator
-      auto baseIt = rit.base();
-      --baseIt;
-      baseIt = player2.erase(baseIt);
-      rit = CardList::reverse_iterator(baseIt);
-    } else {
-      ++rit;
+int main() {
+    CardList myCards;
+
+    std::string suit = "H";  // Example input
+    std::string rank = "A";
+
+    // Pass chars, not strings
+    myCards.push_back(Card(suit[0], rank[0]));
+
+    auto it = myCards.find(Card(suit[0], rank[0]));
+    if (it != myCards.end()) {
+        myCards.erase(it);
     }
-  }
 
-  cout << endl << "Alice's remaining cards:" << endl;
-  for (CardList::iterator it2 = player1.begin(); it2 != player1.end(); ++it2) {
-    cout << it2->toString() << endl;
-  }
+    for (auto& card : myCards) {
+        std::cout << card.suit << card.rank << std::endl;
+    }
 
-  cout << endl << "Bob's remaining cards:" << endl;
-  for (CardList::iterator it2 = player2.begin(); it2 != player2.end(); ++it2) {
-    cout << it2->toString() << endl;
-  }
-
-  return 0;
+    return 0;
 }

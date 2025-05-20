@@ -1,5 +1,7 @@
-// Feb 14: This file should implement the game using the std::set container class
-// Do not include card_list.h in this file
+// main_set.cpp
+// Feb 14: This file implements the game using std::set container class
+// Does NOT include card_list.h
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,69 +10,106 @@
 
 using namespace std;
 
-int main(int argv, char** argc){
-  if(argv < 3){
-    cout << "Please provide 2 file names" << endl;
-    return 1;
-  }
-  
-  ifstream file1(argc[1]);
-  ifstream file2(argc[2]);
-  string line;
+// Function to play the game with std::set<Card>
+void playGame(set<Card>& alice, set<Card>& bob) {
+    bool matchFound = true;
 
-  if (file1.fail() || file2.fail()){
-    cout << "Could not open file " << argc[2] << endl;
-    return 1;
-  }
+    while (matchFound) {
+        matchFound = false;
 
-  set<Card> p1cards;
-  set<Card> p2cards;
+        for (const Card& aliceCard : alice) {
+            if (bob.find(aliceCard) != bob.end()) {
+                matchFound = true;
+                cout << "Alice picked matching card " << aliceCard << endl;
 
-  while (getline(file1, line) && (line.length() > 0)) {
-    string suit = line.substr(0,1);
-    string rank = line.substr(1);
-    p1cards.insert(Card(suit, rank));
-  }
-  file1.close();
+                alice.erase(aliceCard);
+                bob.erase(aliceCard);
+                break;
+            }
+        }
 
-  while (getline(file2, line) && (line.length() > 0)) {
-    string suit = line.substr(0,1);
-    string rank = line.substr(1);
-    p2cards.insert(Card(suit, rank));
-  }
-  file2.close();
+        if (!matchFound) {
+            break;
+        }
 
-  set<Card>::iterator it1 = p1cards.begin();
-  while (it1 != p1cards.end()) {
-    if (p2cards.find(*it1) != p2cards.end()) {
-      cout << "Alice picked matching card " << it1->toString() << endl;
-      p2cards.erase(*it1);
-      it1 = p1cards.erase(it1);
-    } else {
-      ++it1;
+        matchFound = false;
+
+        for (auto it = bob.rbegin(); it != bob.rend(); ++it) {
+            const Card& bobCard = *it;
+
+            if (alice.find(bobCard) != alice.end()) {
+                matchFound = true;
+                cout << "Bob picked matching card " << bobCard << endl;
+
+                alice.erase(bobCard);
+                bob.erase(bobCard);
+                break;
+            }
+        }
     }
-  }
 
-  set<Card>::reverse_iterator rit2 = p2cards.rbegin();
-  while (rit2 != p2cards.rend()) {
-    if (p1cards.find(*rit2) != p1cards.end()) {
-      cout << "Bob picked matching card " << rit2->toString() << endl;
-      p1cards.erase(*rit2);
-      rit2 = set<Card>::reverse_iterator(p2cards.erase(next(rit2).base()));
-    } else {
-      ++rit2;
+    cout << "\nAlice's cards:" << endl;
+    for (const Card& c : alice) {
+        cout << c << endl;
     }
-  }
 
-  cout << endl << "Alice's remaining cards:" << endl;
-  for (set<Card>::iterator it = p1cards.begin(); it != p1cards.end(); it++) {
-    cout << it->toString() << endl;
-  }
+    cout << "Bob's cards:" << endl;
+    for (const Card& c : bob) {
+        cout << c << endl;
+    }
+}
 
-  cout << endl << "Bob's remaining cards:" << endl;
-  for (set<Card>::iterator it = p2cards.begin(); it != p2cards.end(); it++) {
-    cout << it->toString() << endl;
-  }
+int main(int argc, char** argv) {
+    if (argc < 3) {
+        cout << "Please provide 2 file names" << endl;
+        return 1;
+    }
 
-  return 0;
+    ifstream cardFile1(argv[1]);
+    ifstream cardFile2(argv[2]);
+    string line;
+
+    if (cardFile1.fail() || cardFile2.fail()) {
+        cout << "Could not open file " << argv[2] << endl;
+        return 1;
+    }
+
+    set<Card> alice;
+    set<Card> bob;
+
+    while (getline(cardFile1, line) && (line.length() > 0)) {
+        if (line.length() >= 3) {
+            char suit = line[0];
+            char rank;
+            if (line.length() >= 4 && line[2] == '1' && line[3] == '0') {
+                rank = 't';
+            }
+            else {
+                rank = line[2];
+            }
+            Card card(rank, suit);
+            alice.insert(card);
+        }
+    }
+    cardFile1.close();
+
+    while (getline(cardFile2, line) && (line.length() > 0)) {
+        if (line.length() >= 3) {
+            char suit = line[0];
+            char rank;
+            if (line.length() >= 4 && line[2] == '1' && line[3] == '0') {
+                rank = 't';
+            }
+            else {
+                rank = line[2];
+            }
+            Card card(rank, suit);
+            bob.insert(card);
+        }
+    }
+    cardFile2.close();
+
+    playGame(alice, bob);
+
+    return 0;
 }
