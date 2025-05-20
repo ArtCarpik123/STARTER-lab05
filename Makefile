@@ -1,5 +1,5 @@
 CXX=g++ 
-CXXFLAGS = -g --std=c++20 -Wall
+CXXFLAGS = -g -std=c++20 -Wall
 
 all: game game_set
 
